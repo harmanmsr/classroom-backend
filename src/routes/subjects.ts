@@ -34,10 +34,11 @@ router.get('/', async (req, res) => {
 
         // If search query exists, filter by subject name OR subject code
         if (searchTerm) {
+            const searchPattern = `%${searchTerm.replace(/[%_]/g, '\\$&')}%`;
             filterConditions.push(
                 or(
-                    ilike(subjects.name, `%${searchTerm}%`),
-                    ilike(subjects.code, `%${searchTerm}%`)
+                    ilike(subjects.name, `%${searchPattern}%`),
+                    ilike(subjects.code, `%${searchPattern}%`)
                 )
             );
         }
