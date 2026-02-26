@@ -37,8 +37,8 @@ router.get('/', async (req, res) => {
             const searchPattern = `%${searchTerm.replace(/[%_]/g, '\\$&')}%`;
             filterConditions.push(
                 or(
-                    ilike(subjects.name, `%${searchPattern}%`),
-                    ilike(subjects.code, `%${searchPattern}%`)
+                    ilike(subjects.name, searchPattern),
+                    ilike(subjects.code, searchPattern)
                 )
             );
         }
