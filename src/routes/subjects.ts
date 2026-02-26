@@ -8,10 +8,16 @@ const router = express.Router();
 // Get all subjects with optional search, filtering and pagination
 router.get('/', async (req, res) => {
     try {
-        const { search, department, page = 1, limit = 10 } = req.query;
+        const { search, department, page, limit } = req.query;
 
-        const currentPage = Math.max(1, +page);
-        const limitPerPage = Math.max(1, +limit);
+        const parsePositiveInt = (value: unknown, fallback: number) => {
+            const raw = Array.isArray(value) ? value[0] : value;
+            const parsed = Number(raw);
+            return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+        };
+
+        const currentPage = parsePositiveInt(page, 1);
+        const limitPerPage = Math.min(parsePositiveInt(limit, 10), 100);
 
         const offset = (currentPage - 1) * limitPerPage;
 
@@ -29,7 +35,8 @@ router.get('/', async (req, res) => {
 
         // If department filter exists, match department name
         if (department) {
-            filterConditions.push(ilike(departments.name, `%${department}%`));
+            const deptPattern = `%${String(department).replace(/[%_]/g, '\\$&')}%`;
+            filterConditions.push(ilike(departments.name, deptPattern));
         }
 
         // Combine all filters using AND if any exist
@@ -66,7 +73,7 @@ router.get('/', async (req, res) => {
         })
 
     } catch (err) {
-        console.error(`GET /subjects error: ${err}`);
+        console.error('GET /subjects error: ', err);
         res.status(500).json({ error: 'Failed to get subjects' });
     }
 
