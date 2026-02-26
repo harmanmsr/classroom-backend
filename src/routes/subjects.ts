@@ -10,12 +10,21 @@ router.get('/', async (req, res) => {
     try {
         const { search, department, page, limit } = req.query;
 
+        const parseSingleString = (value: unknown): string | undefined => {
+            const raw = Array.isArray(value) ? value[0] : value;
+            if (typeof raw !== 'string') return undefined;
+            const trimmed = raw.trim();
+            return trimmed.length > 0 ? trimmed : undefined;
+        };
+
         const parsePositiveInt = (value: unknown, fallback: number) => {
             const raw = Array.isArray(value) ? value[0] : value;
             const parsed = Number(raw);
             return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
         };
 
+        const searchTerm = parseSingleString(search);
+        const departmentTerm = parseSingleString(department);
         const currentPage = parsePositiveInt(page, 1);
         const limitPerPage = Math.min(parsePositiveInt(limit, 10), 100);
 
@@ -24,18 +33,18 @@ router.get('/', async (req, res) => {
         const filterConditions = [];
 
         // If search query exists, filter by subject name OR subject code
-        if (search) {
+        if (searchTerm) {
             filterConditions.push(
                 or(
-                    ilike(subjects.name, `%${search}%`),
-                    ilike(subjects.code, `%${search}%`)
+                    ilike(subjects.name, `%${searchTerm}%`),
+                    ilike(subjects.code, `%${searchTerm}%`)
                 )
             );
         }
 
         // If department filter exists, match department name
-        if (department) {
-            const deptPattern = `%${String(department).replace(/[%_]/g, '\\$&')}%`;
+        if (departmentTerm) {
+            const deptPattern = `%${String(departmentTerm).replace(/[%_]/g, '\\$&')}%`;
             filterConditions.push(ilike(departments.name, deptPattern));
         }
 
